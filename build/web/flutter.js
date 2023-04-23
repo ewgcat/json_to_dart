@@ -110,7 +110,7 @@ _flutter.loader = null;
 
       const {
         serviceWorkerVersion,
-        timeoutMillis = 4000,
+        timeoutMillis = 30000,
       } = serviceWorkerOptions;
 
       let serviceWorkerUrl = "flutter_service_worker.js?v=" + serviceWorkerVersion;
