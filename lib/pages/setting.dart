@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:json_to_dart/main_controller.dart';
 import 'package:json_to_dart/models/config.dart';
+import 'package:json_to_dart/pages/result.dart';
 import 'package:json_to_dart/style/color.dart';
 import 'package:json_to_dart/style/text.dart';
 import 'package:json_to_dart/utils/enums.dart';
@@ -31,7 +33,17 @@ class SettingWidget extends StatelessWidget {
           title: appLocalizations.generateButtonLabel,
           icon: Icons.flag,
           onPressed: () {
-            controller.generateDart();
+            final String? dartText = controller.generateDart();
+            if (dartText == null) {
+              return;
+            }
+            if (ConfigSetting().showResultDialog.value) {
+              SmartDialog.compatible.show(
+                widget: ResultDialog(
+                  text: dartText,
+                ),
+              );
+            }
           },
         ),
         TapButton(
@@ -224,25 +236,22 @@ class MoreSetting extends StatelessWidget {
         Obx(() {
           return StCheckBox(
             title: appLocalizations.nullsafety,
-            value: ConfigSetting().nullsafetyObs.value,
+            value: ConfigSetting().nullsafety.value,
             onChanged: (bool value) {
-              ConfigSetting().nullsafety = value;
-              //ConfigSetting().nullable = true;
+              ConfigSetting().nullsafety.value = value;
               if (!value) {
-                ConfigSetting().smartNullable = false;
+                ConfigSetting().smartNullable.value = false;
               }
-              ConfigSetting().nullsafetyObs.value = value;
             },
           );
         }),
         Obx(() {
-          if (ConfigSetting().nullsafetyObs.value) {
+          if (ConfigSetting().nullsafety.value) {
             return StCheckBox(
               title: appLocalizations.smartNullable,
-              value: ConfigSetting().smartNullableObs.value,
+              value: ConfigSetting().smartNullable.value,
               onChanged: (bool value) {
-                ConfigSetting().smartNullable = value;
-                ConfigSetting().smartNullableObs.value = value;
+                ConfigSetting().smartNullable.value = value;
                 // if (!value) {
                 //   controller.updateNullable(true);
                 // }
@@ -271,6 +280,17 @@ class MoreSetting extends StatelessWidget {
             value: ConfigSetting().automaticCheck.value,
             onChanged: (bool value) {
               ConfigSetting().automaticCheck.value = value;
+            },
+          );
+        }),
+        Obx(() {
+          return StCheckBox(
+            title: appLocalizations.showResultDialog,
+            value: ConfigSetting().showResultDialog.value,
+            onChanged: (bool value) {
+              if (value != ConfigSetting().showResultDialog.value) {
+                ConfigSetting().showResultDialog.value = value;
+              }
             },
           );
         }),

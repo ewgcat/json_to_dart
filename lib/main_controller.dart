@@ -18,7 +18,7 @@ import 'models/config.dart';
 import 'models/dart_object.dart';
 
 void showAlertDialog(String msg, [IconData data = Icons.warning]) {
-  SmartDialog.show(
+  SmartDialog.compatible.show(
       widget: AlertDialog(
     title: Icon(data),
     content: Text(msg),
@@ -26,7 +26,7 @@ void showAlertDialog(String msg, [IconData data = Icons.warning]) {
       TextButton(
         child: Text(appLocalizations.ok),
         onPressed: () {
-          SmartDialog.dismiss();
+          SmartDialog.compatible.dismiss();
         },
       ),
     ],
@@ -60,7 +60,7 @@ class MainController extends GetxController {
       return;
     }
 
-    SmartDialog.showLoading(
+    SmartDialog.compatible.showLoading(
         widget: const Center(
       child: SpinKitCubeGrid(color: Colors.orange),
     ));
@@ -85,17 +85,23 @@ class MainController extends GetxController {
       //   handleError(error, stackTrace);
       // });
       if (extendedObject == null) {
-        SmartDialog.dismiss();
+        SmartDialog.compatible.dismiss();
         showAlertDialog(appLocalizations.illegalJson, Icons.error);
         return;
       }
 
       dartObject = extendedObject;
+      if (ConfigSetting().nullsafety.value &&
+          ConfigSetting().nullable.value &&
+          !ConfigSetting().smartNullable.value) {
+        updateNullable(true);
+      }
 
       final String? formatJsonString =
           await compute<dynamic, String?>(formatJson, jsonData)
               .onError((Object? error, StackTrace stackTrace) {
         handleError(error, stackTrace);
+        return null;
       });
       if (formatJsonString != null) {
         _textEditingController.text = formatJsonString;
@@ -105,10 +111,10 @@ class MainController extends GetxController {
     } catch (error, stackTrace) {
       handleError(error, stackTrace);
     }
-    SmartDialog.dismiss();
+    SmartDialog.compatible.dismiss();
   }
 
-  void generateDart() {
+  String? generateDart() {
     // allProperties.clear();
     // allObjects.clear();
     printedObjects.clear();
@@ -122,7 +128,7 @@ class MainController extends GetxController {
         showAlertDialog(errorObject.classError.join('\n') +
             '\n' +
             errorObject.propertyError.join('\n'));
-        return;
+        return null;
       }
 
       final DartProperty? errorProperty = allProperties.firstOrNullWhere(
@@ -130,7 +136,7 @@ class MainController extends GetxController {
 
       if (errorProperty != null) {
         showAlertDialog(errorProperty.propertyError.join('\n'));
-        return;
+        return null;
       }
 
       final MyStringBuffer sb = MyStringBuffer();
@@ -169,16 +175,16 @@ class MainController extends GetxController {
         if (ConfigSetting().addMethod.value) {
           if (ConfigSetting().enableArrayProtection.value) {
             sb.writeLine('import \'dart:developer\';');
-            sb.writeLine(ConfigSetting().nullsafety
+            sb.writeLine(ConfigSetting().nullsafety.value
                 ? DartHelper.tryCatchMethodNullSafety
                 : DartHelper.tryCatchMethod);
           }
 
           sb.writeLine(ConfigSetting().enableDataProtection.value
-              ? ConfigSetting().nullsafety
+              ? ConfigSetting().nullsafety.value
                   ? DartHelper.asTMethodWithDataProtectionNullSafety
                   : DartHelper.asTMethodWithDataProtection
-              : ConfigSetting().nullsafety
+              : ConfigSetting().nullsafety.value
                   ? DartHelper.asTMethodNullSafety
                   : DartHelper.asTMethod);
         }
@@ -190,17 +196,21 @@ class MainController extends GetxController {
 
         result = formatter.format(result);
 
-        _textEditingController.text = result;
+        // _textEditingController.text = result;
         Clipboard.setData(ClipboardData(text: result));
         SmartDialog.showToast(appLocalizations.generateSucceed);
+
+        return result;
       } catch (e, stack) {
         print('$e');
         print('$stack');
-        _textEditingController.text = sb.toString();
+        // _textEditingController.text = sb.toString();
         showAlertDialog(appLocalizations.generateFailed, Icons.error);
         Clipboard.setData(ClipboardData(text: '$e\n$stack'));
+        return null;
       }
     }
+    return null;
   }
 
   void orderPropeties() {
